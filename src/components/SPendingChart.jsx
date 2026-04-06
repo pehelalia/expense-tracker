@@ -16,17 +16,16 @@ function getChartColors() {
   const s = getComputedStyle(document.documentElement);
   const v = (name) => s.getPropertyValue(name).trim();
   return {
-    Food:          { bg: v("--chart-food")          || "#E91E8C", border: v("--chart-food-border")          || "#c4177a" },
-    Transport:     { bg: v("--chart-transport")      || "#7C3AED", border: v("--chart-transport-border")      || "#5B21B6" },
-    Entertainment: { bg: v("--chart-entertainment")  || "#F48CB6", border: v("--chart-entertainment-border")  || "#E06B9A" },
-    Study:         { bg: v("--chart-study")          || "#F59E0B", border: v("--chart-study-border")          || "#D97706" },
-    Rent:          { bg: v("--chart-rent")           || "#EC4899", border: v("--chart-rent-border")           || "#DB2777" },
-    Other:         { bg: v("--chart-other")          || "#9CA3AF", border: v("--chart-other-border")          || "#6B7280" },
+    Food: { bg: v("--chart-food") || "#E91E8C", border: v("--chart-food-border") || "#c4177a" },
+    Transport: { bg: v("--chart-transport") || "#7C3AED", border: v("--chart-transport-border") || "#5B21B6" },
+    Entertainment: { bg: v("--chart-entertainment") || "#F48CB6", border: v("--chart-entertainment-border") || "#E06B9A" },
+    Study: { bg: v("--chart-study") || "#F59E0B", border: v("--chart-study-border") || "#D97706" },
+    Rent: { bg: v("--chart-rent") || "#EC4899", border: v("--chart-rent-border") || "#DB2777" },
+    Other: { bg: v("--chart-other") || "#9CA3AF", border: v("--chart-other-border") || "#6B7280" },
   };
 }
 
-export default function SpendingChart() {
-  const { summary } = useExpenses();
+export default function SpendingChart({ summary }) {
   const { byCategory, total } = summary;
   const COLORS = getChartColors();
 
@@ -50,7 +49,7 @@ export default function SpendingChart() {
       {
         data: values,
         backgroundColor: labels.map((l) => COLORS[l]?.bg ?? "#888780"),
-        borderColor:     labels.map((l) => COLORS[l]?.border ?? "#5F5E5A"),
+        borderColor: labels.map((l) => COLORS[l]?.border ?? "#5F5E5A"),
         borderWidth: 1.5,
         hoverOffset: 6,
       },

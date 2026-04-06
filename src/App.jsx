@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 import { useExpenses, CATEGORIES } from "./hooks/UseExpenses";
 import ExpenseForm from "./components/ExpenseForm";
+import ExpenseCalendar from "./components/ExpenseCalendar";
 import SpendingChart from "./components/SPendingChart";
 import "./App.css";
 
 export default function App() {
   const {
+    expenses,
+    addExpense,
     budget,
     setBudget,
     summary,
@@ -56,6 +59,7 @@ export default function App() {
         </div>
 
         <div className="app-header__right">
+          <ExpenseCalendar expenses={expenses} />
           <div className="app-header__budget">
             <label className="app-header__budget-label" htmlFor="budget-input">
               Monthly Budget ₹
@@ -119,8 +123,8 @@ export default function App() {
         <div className="main-grid">
           {/* Left column */}
           <div className="left-column">
-            <ExpenseForm />
-            <SpendingChart />
+            <ExpenseForm addExpense={addExpense} />
+            <SpendingChart summary={summary} />
           </div>
 
           {/* Right column — Expense list */}

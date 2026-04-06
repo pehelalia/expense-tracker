@@ -7,8 +7,7 @@ import { useExpenses, CATEGORIES } from "../hooks/UseExpenses";
  * Props:
  *   onSuccess(expense) — optional callback after a successful add
  */
-export default function ExpenseForm({ onSuccess }) {
-  const { addExpense } = useExpenses();
+export default function ExpenseForm({ addExpense, onSuccess }) {
 
   const empty = { amount: "", category: "", description: "", date: today() };
   const [form, setForm] = useState(empty);
