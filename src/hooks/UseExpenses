@@ -1,32 +1,29 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { supabase } from "../lib/supabase";
 
 const STORAGE_KEY = "student_expenses";
 const BUDGET_KEY = "student_budget";
 
 /**
- * useExpenses — manages all expense state with localStorage persistence
+ * useExpenses — manages all expense state with Supabase persistence
+ *
+ * Parameters:
+ *   userId — UUID of the logged-in user (from useAuth)
  *
  * Returns:
- *   expenses        — full list of expense objects
- *   addExpense(obj) — add a new expense
- *   deleteExpense(id) — remove by id
- *   budget          — monthly budget (number)
+ *   expenses        — full list of expense objects for this user
+ *   addExpense(obj) — add a new expense (persists to Supabase)
+ *   deleteExpense(id) — remove by id (deletes from Supabase)
+ *   budget          — monthly budget (number, stored in localStorage)
  *   setBudget(n)    — update budget
  *   summary         — { total, remaining, byCategory, biggestCategory }
  *   filterCategory  — currently active category filter (string | "All")
  *   setFilterCategory — update the filter
  *   filteredExpenses — expenses after applying filterCategory
  */
-export function useExpenses() {
-  // ── Load from localStorage on first render ──────────────────────────────
-  const [expenses, setExpenses] = useState(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? JSON.parse(stored) : sampleData();
-    } catch {
-      return sampleData();
-    }
-  });
+export function useExpenses(userId) {
+  const [expenses, setExpenses] = useState([]);
+  const [isLoading, setIsLoading] = useState(!!userId);
 
   const [budget, setBudgetState] = useState(() => {
     try {
@@ -39,10 +36,35 @@ export function useExpenses() {
 
   const [filterCategory, setFilterCategory] = useState("All");
 
-  // ── Persist expenses to localStorage on every change ───────────────────
+  // ── Load expenses from Supabase when userId is available ────────────────
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
-  }, [expenses]);
+    if (!userId) {
+      setExpenses(sampleData());
+      setIsLoading(false);
+      return;
+    }
+
+    const loadExpenses = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("expenses")
+          .select("*")
+          .eq("user_id", userId)
+          .order("date", { ascending: false });
+
+        if (error) throw error;
+        setExpenses(data || []);
+      } catch (err) {
+        console.error("Failed to load expenses:", err.message);
+        // Fallback to sample data on error
+        setExpenses(sampleData());
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadExpenses();
+  }, [userId]);
 
   // ── Persist budget ──────────────────────────────────────────────────────
   function setBudget(value) {
@@ -53,8 +75,8 @@ export function useExpenses() {
     }
   }
 
-  // ── Add a new expense ───────────────────────────────────────────────────
-  function addExpense({ amount, category, description, date }) {
+  // ── Add a new expense (persists to Supabase if userId exists) ───────────
+  const addExpense = useCallback(async ({ amount, category, description, date }) => {
     const errors = validateExpense({ amount, category, description, date });
     if (errors.length > 0) return { ok: false, errors };
 
@@ -64,16 +86,62 @@ export function useExpenses() {
       category,
       description: description.trim(),
       date,
+      user_id: userId || null,
     };
 
-    setExpenses((prev) => [newExpense, ...prev]);
-    return { ok: true, errors: [] };
-  }
+    // Add to Supabase if user is logged in
+    if (userId) {
+      try {
+        const { data, error } = await supabase
+          .from("expenses")
+          .insert([
+            {
+              id: newExpense.id,
+              user_id: userId,
+              amount: newExpense.amount,
+              category: newExpense.category,
+              description: newExpense.description,
+              date: newExpense.date,
+            },
+          ])
+          .select();
 
-  // ── Delete by id ────────────────────────────────────────────────────────
-  function deleteExpense(id) {
-    setExpenses((prev) => prev.filter((e) => e.id !== id));
-  }
+        if (error) throw error;
+        // Update local state with the created expense from Supabase
+        setExpenses((prev) => [data[0] || newExpense, ...prev]);
+      } catch (err) {
+        console.error("Failed to add expense to Supabase:", err.message);
+        return { ok: false, errors: ["Failed to save expense to database"] };
+      }
+    } else {
+      // Fallback: just update local state for a non-authenticated user
+      setExpenses((prev) => [newExpense, ...prev]);
+    }
+
+    return { ok: true, errors: [] };
+  }, [userId]);
+
+  // ── Delete by id (removes from Supabase if userId exists) ──────────────
+  const deleteExpense = useCallback(async (id) => {
+    if (!userId) {
+      // If no user, just remove from local state
+      setExpenses((prev) => prev.filter((e) => e.id !== id));
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("expenses")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", userId);
+
+      if (error) throw error;
+      setExpenses((prev) => prev.filter((e) => e.id !== id));
+    } catch (err) {
+      console.error("Failed to delete expense:", err.message);
+    }
+  }, [userId]);
 
   // ── Summary calculations (only recalculates when expenses/budget change)
   const summary = useMemo(() => {

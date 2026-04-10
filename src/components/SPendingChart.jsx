@@ -1,11 +1,12 @@
 import { Doughnut } from "react-chartjs-2";
+import { useState, useEffect as React_useEffect } from "react";
 import {
   Chart as ChartJS,
   ArcElement,
   Tooltip,
   Legend,
 } from "chart.js";
-import { useExpenses } from "../hooks/UseExpenses";
+import { CATEGORIES } from "../hooks/UseExpenses";
 
 // Register the pieces of Chart.js you're actually using
 // (Vite tree-shakes the rest — keeps your bundle small)
@@ -25,9 +26,16 @@ function getChartColors() {
   };
 }
 
-export default function SpendingChart({ summary }) {
+export default function SpendingChart({ summary, categoryBudgets = {}, setCategoryBudget }) {
   const { byCategory, total } = summary;
+  const [showLimitsPanel, setShowLimitsPanel] = useState(false);
+  const [editLimits, setEditLimits] = useState(categoryBudgets);
   const COLORS = getChartColors();
+
+  // Update editLimits when categoryBudgets changes
+  React_useEffect(() => {
+    setEditLimits(categoryBudgets);
+  }, [categoryBudgets]);
 
   // Only show categories that have spending
   const activeCategories = Object.entries(byCategory).filter(([, v]) => v > 0);
@@ -84,8 +92,19 @@ export default function SpendingChart({ summary }) {
 
   return (
     <div style={styles.card}>
-      <p style={styles.heading}>Spending breakdown</p>
-      <p style={styles.sub}>This month · ₹{total.toLocaleString("en-IN")} total</p>
+      <div style={styles.header}>
+        <div>
+          <p style={styles.heading}>Spending breakdown</p>
+          <p style={styles.sub}>This month · ₹{total.toLocaleString("en-IN")} total</p>
+        </div>
+        <button
+          onClick={() => setShowLimitsPanel(!showLimitsPanel)}
+          style={styles.setLimitsBtn}
+          title="Set category budget limits"
+        >
+          Set limits
+        </button>
+      </div>
 
       {/* The chart */}
       <div style={styles.chartWrap}>
@@ -98,6 +117,84 @@ export default function SpendingChart({ summary }) {
           </span>
           <span style={styles.centreLabel}>spent</span>
         </div>
+      </div>
+
+      {/* ── Set limits inline panel ─────────────────────────────────────── */}
+      {showLimitsPanel && (
+        <div style={styles.limitsPanel}>
+          {CATEGORIES.map((cat) => (
+            <div key={cat} style={styles.limitField}>
+              <label style={styles.limitLabel}>{cat}</label>
+              <input
+                type="number"
+                min="0"
+                step="100"
+                value={editLimits[cat] || ""}
+                onChange={(e) =>
+                  setEditLimits({
+                    ...editLimits,
+                    [cat]: e.target.value ? parseFloat(e.target.value) : undefined,
+                  })
+                }
+                placeholder="No limit"
+                style={styles.limitInput}
+              />
+            </div>
+          ))}
+          <div style={styles.limitButtons}>
+            <button
+              onClick={() => {
+                Object.entries(editLimits).forEach(([cat, limit]) => {
+                  if (limit !== undefined && limit !== categoryBudgets[cat]) {
+                    setCategoryBudget(cat, limit);
+                  }
+                });
+                setShowLimitsPanel(false);
+              }}
+              style={styles.limitSaveBtn}
+            >
+              Save limits
+            </button>
+            <button
+              onClick={() => {
+                setEditLimits(categoryBudgets);
+                setShowLimitsPanel(false);
+              }}
+              style={styles.limitCancelBtn}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Budget warnings ──────────────────────────────────────────────── */}
+      <div style={styles.warningsSection}>
+        {Object.entries(byCategory).map(([cat, spent]) => {
+          const limit = categoryBudgets[cat];
+          if (!limit || spent <= limit) return null;
+
+          const overspend = spent - limit;
+          return (
+            <div key={cat} style={styles.warningPill}>
+              <span>⚠️</span>
+              <span>
+                {cat} — ₹{spent.toLocaleString("en-IN")} spent of ₹
+                {limit.toLocaleString("en-IN")} limit (₹
+                {overspend.toLocaleString("en-IN")} over)
+              </span>
+            </div>
+          );
+        })}
+
+        {Object.entries(byCategory).every(([cat, spent]) => {
+          const limit = categoryBudgets[cat];
+          return !limit || spent <= limit;
+        }) && Object.keys(categoryBudgets).length > 0 && (
+          <div style={styles.allGoodPill}>
+            ✓ All categories within budget
+          </div>
+        )}
       </div>
     </div>
   );
@@ -112,6 +209,12 @@ const styles = {
     padding: "1.25rem",
     fontFamily: "var(--font-sans, sans-serif)",
   },
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: "1rem",
+  },
   heading: {
     fontSize: "16px",
     fontWeight: 500,
@@ -121,12 +224,23 @@ const styles = {
   sub: {
     fontSize: "13px",
     color: "var(--color-text-secondary)",
-    margin: "0 0 1.25rem",
+    margin: 0,
+  },
+  setLimitsBtn: {
+    padding: "0.5rem 1rem",
+    background: "var(--color-primary-light)",
+    color: "var(--color-primary)",
+    border: "1.5px solid var(--color-primary)",
+    borderRadius: "0.5rem",
+    fontSize: "0.875rem",
+    fontWeight: 600,
+    cursor: "pointer",
+    transition: "background 150ms ease, color 150ms ease",
   },
   chartWrap: {
     position: "relative",
     maxWidth: "280px",
-    margin: "0 auto",
+    margin: "0 auto 1.5rem",
   },
   centre: {
     position: "absolute",
@@ -146,6 +260,92 @@ const styles = {
     display: "block",
     fontSize: "12px",
     color: "var(--color-text-secondary)",
+  },
+  limitsPanel: {
+    background: "var(--color-bg)",
+    border: "1px solid var(--color-border-primary)",
+    borderRadius: "8px",
+    padding: "1rem",
+    marginBottom: "1rem",
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+    gap: "0.75rem",
+  },
+  limitField: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.35rem",
+  },
+  limitLabel: {
+    fontSize: "0.8rem",
+    fontWeight: 600,
+    color: "var(--color-text-primary)",
+  },
+  limitInput: {
+    padding: "0.5rem",
+    border: "1px solid var(--color-border-primary)",
+    borderRadius: "6px",
+    background: "var(--color-surface)",
+    color: "var(--color-text-primary)",
+    fontSize: "0.875rem",
+    fontFamily: "inherit",
+  },
+  limitButtons: {
+    gridColumn: "1 / -1",
+    display: "flex",
+    gap: "0.75rem",
+    marginTop: "0.5rem",
+  },
+  limitSaveBtn: {
+    flex: 1,
+    padding: "0.625rem 1rem",
+    background: "var(--color-primary)",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "0.875rem",
+    fontWeight: 600,
+    cursor: "pointer",
+    transition: "background 150ms ease",
+  },
+  limitCancelBtn: {
+    flex: 1,
+    padding: "0.625rem 1rem",
+    background: "var(--color-background-hover)",
+    color: "var(--color-text-primary)",
+    border: "1px solid var(--color-border-primary)",
+    borderRadius: "6px",
+    fontSize: "0.875rem",
+    fontWeight: 600,
+    cursor: "pointer",
+    transition: "background 150ms ease",
+  },
+  warningsSection: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.5rem",
+  },
+  warningPill: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5rem",
+    padding: "0.75rem 1rem",
+    background: "rgba(229, 57, 53, 0.08)",
+    border: "1px solid var(--color-danger)",
+    borderRadius: "8px",
+    color: "var(--color-danger)",
+    fontSize: "0.875rem",
+    fontWeight: 500,
+  },
+  allGoodPill: {
+    padding: "0.75rem 1rem",
+    background: "rgba(0, 137, 123, 0.08)",
+    border: "1px solid var(--color-success)",
+    borderRadius: "8px",
+    color: "var(--color-success)",
+    fontSize: "0.875rem",
+    fontWeight: 500,
+    textAlign: "center",
   },
   empty: {
     fontSize: "13px",
