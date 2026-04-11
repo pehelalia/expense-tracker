@@ -19,12 +19,32 @@ Students often have no idea where their money goes. Spendwise lets you log every
 - **Add & delete expenses** — log amount, category, description, and date
 - **Category filtering** — filter your expense list by Food, Transport, Study, Rent, Entertainment, or Other
 - **Spending chart** — live doughnut chart showing your breakdown by category
+- **Category budget limits** — set per-category spending limits and get instant warnings when you overspend
 - **Budget tracker** — set a monthly budget and see exactly how much is remaining
 - **Stat cards** — total spent, budget remaining, and your biggest spending category at a glance
 - **Dark mode** — full dark/light toggle with your preference saved across sessions
 - **Pink theme** — a custom pink & violet color system that works in both modes
-- **Persistent data** — everything saves to localStorage, no backend or account needed
+- **Authentication** — sign up and log in to sync expenses across devices
+- **Persistent data** — all expenses and budget limits sync to Supabase in real-time
+- **Success notifications** — toast feedback when expenses are added successfully
+- **Error handling** — graceful error boundaries prevent crashes; friendly error messages guide recovery
 - **Mobile responsive** — works on any screen size
+
+---
+
+## Key Highlights
+
+### 🎯 Category Budget Limits
+Set spending limits for each category. The app shows real-time warnings in red when you exceed a limit, helping you stay on track.
+
+### 🔔 Success Notifications  
+Smooth toast notifications appear briefly at the bottom of the screen when you successfully add an expense — instant visual feedback without clutter.
+
+### 🛡️ Graceful Error Handling
+If something goes wrong, you'll see a friendly error message instead of a blank screen. Hit "Reload app" to recover and continue.
+
+### 👤 User Accounts
+Sign up or log in with your email to sync expenses across devices. Your data is stored securely in Supabase and recoverable anytime.
 
 ---
 
@@ -34,11 +54,11 @@ Students often have no idea where their money goes. Spendwise lets you log every
 |---|---|
 | React 18 | UI and component logic |
 | Vite | Build tool and dev server |
+| Supabase | Backend, PostgreSQL database, and authentication |
 | Chart.js + react-chartjs-2 | Doughnut chart |
-| localStorage | Data persistence |
 | CSS custom properties | Theming (light/dark) |
 
-No external UI libraries. No backend. No database.
+No external UI libraries. Full-stack with real-time data sync.
 
 ---
 
@@ -72,12 +92,23 @@ npm run build
 ```
 src/
 ├── hooks/
-│   └── useExpenses.js       # All state, localStorage, and summary logic
+│   ├── useExpenses.js          # All expense state and CRUD logic
+│   ├── useAuth.js              # Authentication and session management
+│   ├── useCategoryBudgets.js   # Per-category budget limits
+│   └── useProfile.js           # User profile data
 ├── components/
-│   ├── ExpenseForm.jsx       # Add expense form with validation
-│   └── SpendingChart.jsx     # Chart.js doughnut chart
-├── App.jsx                   # Main layout
-└── App.css                   # All styles + CSS variables
+│   ├── ExpenseForm.jsx          # Add expense form with validation
+│   ├── ExpenseCalendar.jsx      # Calendar view of expenses
+│   ├── SPendingChart.jsx        # Chart.js doughnut chart + limit warnings
+│   ├── Toast.jsx                # Success notification toast
+│   ├── ErrorBoundary.jsx        # Global crash handler
+│   └── LoginPage.jsx            # Auth UI
+├── lib/
+│   └── supabase.js              # Supabase client config
+├── pages/
+│   └── LoginPage.jsx            # Sign up / sign in page
+├── App.jsx                      # Main layout and state orchestration
+└── App.css                      # All styles + CSS variables
 ```
 
 ---
