@@ -143,12 +143,14 @@ export default function SpendingChart({ summary, categoryBudgets = {}, setCatego
           ))}
           <div style={styles.limitButtons}>
             <button
-              onClick={() => {
+              onClick={async () => {
+                const promises = [];
                 Object.entries(editLimits).forEach(([cat, limit]) => {
                   if (limit !== undefined && limit !== categoryBudgets[cat]) {
-                    setCategoryBudget(cat, limit);
+                    promises.push(setCategoryBudget(cat, limit));
                   }
                 });
+                await Promise.all(promises);
                 setShowLimitsPanel(false);
               }}
               style={styles.limitSaveBtn}

@@ -22,7 +22,7 @@ export function useCategoryBudgets(userId) {
       try {
         const { data, error } = await supabase
           .from("category_budgets")
-          .select("category, limit")
+          .select("category, budget_limit")
           .eq("user_id", userId);
 
         if (error) throw error;
@@ -30,11 +30,12 @@ export function useCategoryBudgets(userId) {
         // Convert array to object keyed by category
         const budgetsObj = {};
         if (data) {
-          data.forEach(({ category, limit }) => {
-            budgetsObj[category] = limit;
+          data.forEach(({ category, budget_limit }) => {
+            budgetsObj[category] = budget_limit;
           });
         }
         setCategoryBudgetsState(budgetsObj);
+        console.log("Loaded categoryBudgets:", budgetsObj);
       } catch (err) {
         console.error("Failed to load category budgets:", err.message);
         setCategoryBudgetsState({});
@@ -54,16 +55,16 @@ export function useCategoryBudgets(userId) {
         const { error } = await supabase
           .from("category_budgets")
           .upsert(
-            { user_id: userId, category, limit },
+            { user_id: userId, category, budget_limit: Number(limit) },
             { onConflict: "user_id,category" }
           );
 
         if (error) throw error;
 
-        // Update local state
+        // Update local state immediately after successful upsert
         setCategoryBudgetsState((prev) => ({
           ...prev,
-          [category]: limit,
+          [category]: Number(limit),
         }));
       } catch (err) {
         console.error(
