@@ -12,7 +12,6 @@ export default function ExpenseForm({ addExpense, onSuccess }) {
   const empty = { amount: "", category: "", description: "", date: today() };
   const [form, setForm] = useState(empty);
   const [errors, setErrors] = useState([]);
-  const [submitted, setSubmitted] = useState(false);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -21,9 +20,9 @@ export default function ExpenseForm({ addExpense, onSuccess }) {
     if (errors.length > 0) setErrors([]);
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    const result = addExpense(form);
+    const result = await addExpense(form);
 
     if (!result.ok) {
       setErrors(result.errors);
@@ -32,21 +31,12 @@ export default function ExpenseForm({ addExpense, onSuccess }) {
 
     setForm(empty);
     setErrors([]);
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 2500);
     onSuccess?.();
   }
 
   return (
     <div style={styles.card}>
       <p style={styles.heading}>Add expense</p>
-
-      {/* Success banner */}
-      {submitted && (
-        <div style={styles.success}>
-          Expense added successfully.
-        </div>
-      )}
 
       {/* Error list */}
       {errors.length > 0 && (

@@ -7,6 +7,7 @@ import ExpenseCalendar from "./components/ExpenseCalendar";
 import { supabase } from "./lib/supabase.js";
 import SpendingChart from "./components/SPendingChart";
 import LoginPage from "./pages/LoginPage";
+import Toast from "./components/Toast";
 import "./App.css";
 
 console.log(supabase); // should print the Supabase client object, not undefined
@@ -49,6 +50,7 @@ function AppContent({ user, onSignOut }) {
   const { categoryBudgets, setCategoryBudget } = useCategoryBudgets(user?.id);
 
   const [activePanelTab, setActivePanelTab] = useState("expenses");
+  const [toast, setToast] = useState(false);
 
   const { total, remaining, biggestCategory } = summary;
 
@@ -226,7 +228,13 @@ function AppContent({ user, onSignOut }) {
         <div className="main-grid">
           {/* Left column */}
           <div className="left-column">
-            <ExpenseForm addExpense={addExpense} />
+            <ExpenseForm
+              addExpense={addExpense}
+              onSuccess={() => {
+                setToast(true);
+                setTimeout(() => setToast(false), 2500);
+              }}
+            />
             <SpendingChart summary={summary} categoryBudgets={categoryBudgets} setCategoryBudget={setCategoryBudget} />
           </div>
 
@@ -348,6 +356,8 @@ function AppContent({ user, onSignOut }) {
           </div>
         </div>
       </div>
+
+      <Toast visible={toast} message="✓ Expense added" />
     </>
   );
 }

@@ -77,21 +77,21 @@ export function useExpenses(userId) {
 
   // ── Add a new expense (persists to Supabase if userId exists) ───────────
   const addExpense = useCallback(async ({ amount, category, description, date }) => {
-    const errors = validateExpense({ amount, category, description, date });
-    if (errors.length > 0) return { ok: false, errors };
+    try {
+      const errors = validateExpense({ amount, category, description, date });
+      if (errors.length > 0) return { ok: false, errors };
 
-    const newExpense = {
-      id: crypto.randomUUID(),
-      amount: parseFloat(parseFloat(amount).toFixed(2)),
-      category,
-      description: description.trim(),
-      date,
-      user_id: userId || null,
-    };
+      const newExpense = {
+        id: crypto.randomUUID(),
+        amount: parseFloat(parseFloat(amount).toFixed(2)),
+        category,
+        description: description.trim(),
+        date,
+        user_id: userId || null,
+      };
 
-    // Add to Supabase if user is logged in
-    if (userId) {
-      try {
+      // Add to Supabase if user is logged in
+      if (userId) {
         const { data, error } = await supabase
           .from("expenses")
           .insert([
@@ -109,16 +109,16 @@ export function useExpenses(userId) {
         if (error) throw error;
         // Update local state with the created expense from Supabase
         setExpenses((prev) => [data[0] || newExpense, ...prev]);
-      } catch (err) {
-        console.error("Failed to add expense to Supabase:", err.message);
-        return { ok: false, errors: ["Failed to save expense to database"] };
+      } else {
+        // Fallback: just update local state for a non-authenticated user
+        setExpenses((prev) => [newExpense, ...prev]);
       }
-    } else {
-      // Fallback: just update local state for a non-authenticated user
-      setExpenses((prev) => [newExpense, ...prev]);
-    }
 
-    return { ok: true, errors: [] };
+      return { ok: true, errors: [] };
+    } catch (err) {
+      console.error("addExpense failed:", err.message);
+      return { ok: false, errors: [err.message] };
+    }
   }, [userId]);
 
   // ── Delete by id (removes from Supabase if userId exists) ──────────────
