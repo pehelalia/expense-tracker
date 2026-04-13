@@ -18,11 +18,12 @@ function getChartColors() {
   const v = (name) => s.getPropertyValue(name).trim();
   return {
     Food: { bg: v("--chart-food") || "#E91E8C", border: v("--chart-food-border") || "#c4177a" },
+    Groceries: { bg: v("--chart-groceries") || "#2ECC71", border: v("--chart-groceries-border") || "#27AE60" },
     Transport: { bg: v("--chart-transport") || "#7C3AED", border: v("--chart-transport-border") || "#5B21B6" },
     Entertainment: { bg: v("--chart-entertainment") || "#F48CB6", border: v("--chart-entertainment-border") || "#E06B9A" },
     Study: { bg: v("--chart-study") || "#F59E0B", border: v("--chart-study-border") || "#D97706" },
     Rent: { bg: v("--chart-rent") || "#EC4899", border: v("--chart-rent-border") || "#DB2777" },
-    Other: { bg: v("--chart-other") || "#9CA3AF", border: v("--chart-other-border") || "#6B7280" },
+    Miscellaneous: { bg: v("--chart-miscellaneous") || "#9CA3AF", border: v("--chart-miscellaneous-border") || "#6B7280" },
   };
 }
 

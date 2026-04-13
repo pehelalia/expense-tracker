@@ -14,6 +14,16 @@
   }
 }
 
+/* ── Typing Cursor Blink ──────────────────────────────────────────────────── */
+@keyframes blink {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0;
+  }
+}
+
 /* ── Header ────────────────────────────────────────────────────────────── */
 .app-header {
   background: var(--color-surface);
@@ -73,31 +83,54 @@
 
 .app-header__budget {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 0;
-  background: var(--color-bg);
-  border: 1.5px solid var(--color-primary-mid);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-primary);
   border-radius: var(--radius-pill);
   padding: 0;
   overflow: hidden;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px var(--color-primary-light);
+}
+
+.app-header__budget:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 12px var(--color-primary-light);
 }
 
 .app-header__budget-label {
   font-size: 0.8125rem;
-  color: var(--color-primary);
-  font-weight: 600;
+  color: white;
+  font-weight: 700;
   white-space: nowrap;
-  padding: 0.5rem 0 0.5rem 1rem;
-  background: var(--color-primary-light);
+  padding: 0.65rem 1.2rem;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-mid) 100%);
   display: flex;
   align-items: center;
-  transition: background 0.2s ease, color 0.2s ease;
+  transition: all 0.2s ease;
+  letter-spacing: 0.3px;
+}
+
+.app-header__budget-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 0.75rem;
+  flex: 1;
+  position: relative;
+}
+
+.app-header__budget-currency {
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 0.9375rem;
+  margin-right: 2px;
 }
 
 .app-header__budget-input {
-  width: 110px;
-  padding: 0.5rem 1rem 0.5rem 0.5rem;
+  width: 100px;
+  padding: 0.65rem 0.5rem;
   border-radius: 0;
   border: none;
   background: transparent;
@@ -105,7 +138,7 @@
   font-size: 0.9375rem;
   font-weight: 600;
   outline: none;
-  transition: background var(--transition-fast), color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .app-header__budget-input::placeholder {
@@ -113,7 +146,19 @@
 }
 
 .app-header__budget-input:focus {
-  background: var(--color-input-focus-bg);
+  background: transparent;
+  color: var(--color-primary);
+}
+
+/* Hide number input spinner */
+.app-header__budget-input::-webkit-outer-spin-button,
+.app-header__budget-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.app-header__budget-input[type=number] {
+  -moz-appearance: textfield;
 }
 
 /* ── Theme Toggle ──────────────────────────────────────────────────────── */

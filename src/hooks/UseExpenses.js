@@ -215,11 +215,12 @@ function validateExpense({ amount, category, description, date }) {
 // ── Constants ───────────────────────────────────────────────────────────────
 export const CATEGORIES = [
   "Food",
+  "Groceries",
   "Transport",
   "Entertainment",
   "Study",
   "Rent",
-  "Other",
+  "Miscellaneous",
 ];
 
 // ── Sample data (shown on first load so the app isn't empty) ────────────────

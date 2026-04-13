@@ -2,11 +2,12 @@ import { useState } from "react";
 
 const CATEGORY_COLORS = {
     Food: "#E91E8C",
+    Groceries: "#2ECC71",
     Transport: "#7C3AED",
     Entertainment: "#F48CB6",
     Study: "#F59E0B",
     Rent: "#EC4899",
-    Other: "#9CA3AF",
+    Miscellaneous: "#9CA3AF",
 };
 
 export default function ExpenseCalendar({ expenses }) {

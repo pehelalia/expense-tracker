@@ -8,6 +8,7 @@ import { supabase } from "./lib/supabase.js";
 import SpendingChart from "./components/SPendingChart";
 import LoginPage from "./pages/LoginPage";
 import Toast from "./components/Toast";
+import WelcomeModal from "./components/WelcomeModal";
 import "./App.css";
 
 console.log(supabase); // should print the Supabase client object, not undefined
@@ -35,6 +36,7 @@ export default function App() {
 }
 
 function AppContent({ user, onSignOut }) {
+  // ── IMPORTANT: Always call all hooks FIRST, before any conditional logic ──
   const {
     expenses,
     addExpense,
@@ -51,13 +53,49 @@ function AppContent({ user, onSignOut }) {
 
   const [activePanelTab, setActivePanelTab] = useState("expenses");
   const [toast, setToast] = useState(false);
-
-  const { total, remaining, biggestCategory } = summary;
+  const [needsOnboarding, setNeedsOnboarding] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
+  const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
+  const [displayedText, setDisplayedText] = useState("");
 
   // ── Theme toggle ──────────────────────────────────────────────────────
   const [isDark, setIsDark] = useState(() => {
     return document.documentElement.getAttribute("data-theme") === "dark";
   });
+
+  const { total, remaining, biggestCategory } = summary;
+
+  // ── Check if user needs onboarding ────────────────────────────────────
+  useEffect(() => {
+    async function checkOnboarding() {
+      if (!user?.id) {
+        setIsCheckingOnboarding(false);
+        return;
+      }
+
+      try {
+        const { data: profile, error } = await supabase
+          .from("profiles")
+          .select("onboarding_done, first_name, last_name")
+          .eq("id", user.id)
+          .single();
+
+        if (error) throw error;
+
+        setUserProfile(profile);
+        const shouldShowModal =
+          profile?.onboarding_done === false || !profile?.first_name;
+        setNeedsOnboarding(shouldShowModal);
+      } catch (err) {
+        console.error("Failed to check onboarding:", err.message);
+        setNeedsOnboarding(false);
+      } finally {
+        setIsCheckingOnboarding(false);
+      }
+    }
+
+    checkOnboarding();
+  }, [user?.id]);
 
   useEffect(() => {
     const saved = localStorage.getItem("theme");
@@ -67,12 +105,58 @@ function AppContent({ user, onSignOut }) {
     }
   }, []);
 
+  // ── Typing animation for greeting ──────────────────────────────────────
+  useEffect(() => {
+    if (!userProfile?.first_name) {
+      setDisplayedText("");
+      return;
+    }
+
+    const fullText = `Hi ${userProfile.first_name}! 👋`;
+    let currentIndex = 0;
+
+    const timer = setInterval(() => {
+      if (currentIndex <= fullText.length) {
+        setDisplayedText(fullText.slice(0, currentIndex));
+        currentIndex++;
+      } else {
+        clearInterval(timer);
+      }
+    }, 80); // Typing speed - adjust for faster/slower
+
+    return () => clearInterval(timer);
+  }, [userProfile?.first_name]);
+
   function toggleTheme() {
     const current = document.documentElement.getAttribute("data-theme");
     const next = current === "dark" ? "light" : "dark";
     document.documentElement.setAttribute("data-theme", next);
     localStorage.setItem("theme", next);
     setIsDark(next === "dark");
+  }
+
+  // ── NOW check conditionals AFTER all hooks are called ──────────────────
+  if (isCheckingOnboarding) {
+    return (
+      <div className="auth-loading">
+        <div className="spinner spinner--lg"></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (needsOnboarding === true) {
+    return (
+      <WelcomeModal
+        user={user}
+        setBudget={setBudget}
+        setCategoryBudget={setCategoryBudget}
+        onComplete={() => {
+          setNeedsOnboarding(false);
+          setUserProfile((prev) => ({ ...prev, onboarding_done: true }));
+        }}
+      />
+    );
   }
 
   // Sort by most recent date
@@ -164,18 +248,21 @@ function AppContent({ user, onSignOut }) {
           <ExpenseCalendar expenses={expenses} />
           <div className="app-header__budget">
             <label className="app-header__budget-label" htmlFor="budget-input">
-              Monthly Budget ₹
+              Monthly Budget
             </label>
-            <input
-              id="budget-input"
-              className="app-header__budget-input"
-              type="number"
-              min="0"
-              step="100"
-              value={budget}
-              onChange={(e) => setBudget(e.target.value)}
-              placeholder="5000"
-            />
+            <div className="app-header__budget-input-wrapper">
+              <span className="app-header__budget-currency">₹</span>
+              <input
+                id="budget-input"
+                className="app-header__budget-input"
+                type="number"
+                min="0"
+                step="100"
+                value={budget}
+                onChange={(e) => setBudget(e.target.value)}
+                placeholder="5000"
+              />
+            </div>
           </div>
 
           <button
@@ -188,12 +275,36 @@ function AppContent({ user, onSignOut }) {
           </button>
 
           {/* User pill with dropdown */}
-          <UserPill user={user} onSignOut={onSignOut} />
+          <UserPill user={user} userProfile={userProfile} onSignOut={onSignOut} />
         </div>
       </header>
 
       {/* ── Content ─────────────────────────────────────────────────────── */}
       <div className="app-container">
+        {/* ── Typing Greeting ─────────────────────────────────────────── */}
+        {userProfile?.first_name && (
+          <div style={{
+            fontSize: "28px",
+            fontWeight: 700,
+            color: "var(--color-text-primary)",
+            marginBottom: "24px",
+            lineHeight: "1.2",
+            minHeight: "40px",
+          }}>
+            {displayedText}
+            {displayedText.length < `Hi ${userProfile.first_name}! 👋`.length && (
+              <span style={{
+                display: "inline-block",
+                width: "2px",
+                height: "28px",
+                backgroundColor: "var(--color-primary)",
+                marginLeft: "4px",
+                animation: "blink 0.8s infinite",
+                verticalAlign: "middle",
+              }} />
+            )}
+          </div>
+        )}
         {/* ── Summary Cards ───────────────────────────────────────────── */}
         <div className="summary-row">
           <SummaryCard
@@ -363,10 +474,15 @@ function AppContent({ user, onSignOut }) {
 }
 
 /* ── User pill component with sign out dropdown ──────────────────────────── */
-function UserPill({ user, onSignOut }) {
+function UserPill({ user, userProfile, onSignOut }) {
   const [showDropdown, setShowDropdown] = useState(false);
 
   if (!user) return null;
+
+  const displayName =
+    userProfile?.first_name && userProfile?.last_name
+      ? `${userProfile.first_name} ${userProfile.last_name}`
+      : user.username;
 
   const handleSignOut = async () => {
     try {
@@ -386,7 +502,7 @@ function UserPill({ user, onSignOut }) {
       >
         <div className="user-pill__avatar">{user.initials}</div>
         <div className="user-pill__info">
-          <div className="user-pill__username">{user.username}</div>
+          <div className="user-pill__username">{displayName}</div>
           <div className="user-pill__email">{user.email}</div>
         </div>
       </button>
