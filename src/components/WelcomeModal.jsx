@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { CATEGORIES } from "../hooks/UseExpenses";
 
@@ -11,6 +11,9 @@ export default function WelcomeModal({ user, setBudget, setCategoryBudget, onCom
   const [categoryLimits, setCategoryLimits] = useState({});
   const [theme, setTheme] = useState("light");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return document.documentElement.getAttribute("data-theme") === "dark";
+  });
 
   const occupationOptions = [
     "🎓 Student",
@@ -20,6 +23,21 @@ export default function WelcomeModal({ user, setBudget, setCategoryBudget, onCom
     "🔍 Job seeking",
     "✏️ Other",
   ];
+
+  // Detect current theme
+  useEffect(() => {
+    const currentTheme = document.documentElement.getAttribute("data-theme");
+    setIsDarkMode(currentTheme === "dark");
+
+    // Watch for theme changes
+    const observer = new MutationObserver(() => {
+      const theme = document.documentElement.getAttribute("data-theme");
+      setIsDarkMode(theme === "dark");
+    });
+
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
+  }, []);
 
   function handleNext() {
     if (step === 1 && !firstName.trim()) return;
@@ -98,12 +116,12 @@ export default function WelcomeModal({ user, setBudget, setCategoryBudget, onCom
       fontFamily: "var(--font-sans, sans-serif)",
     },
     card: {
-      background: "white",
+      background: isDarkMode ? "#1a1a1a" : "white",
       maxWidth: "460px",
       width: "90%",
       borderRadius: "20px",
       padding: "36px",
-      border: "2px solid var(--color-primary-mid, #e0b1d6)",
+      border: `2px solid ${isDarkMode ? "var(--color-primary)" : "var(--color-primary-mid, #e0b1d6)"}`,
       boxSizing: "border-box",
       maxHeight: "90vh",
       overflowY: "auto",
@@ -122,26 +140,26 @@ export default function WelcomeModal({ user, setBudget, setCategoryBudget, onCom
       width: "8px",
       height: "8px",
       borderRadius: "50%",
-      background: filled ? "var(--color-primary, #E91E8C)" : "#D3D3D3",
+      background: filled ? "var(--color-primary, #E91E8C)" : (isDarkMode ? "#4a4a4a" : "#D3D3D3"),
       transition: "background 0.2s ease",
     }),
     title: {
       fontSize: "24px",
       fontWeight: 700,
-      color: "var(--color-text-primary, #000)",
+      color: isDarkMode ? "#ffffff" : "#000000",
       marginBottom: "8px",
       textAlign: "center",
     },
     subtitle: {
       fontSize: "13px",
-      color: "var(--color-text-muted, #666)",
+      color: isDarkMode ? "#b0b0b0" : "#666666",
       textAlign: "center",
       marginBottom: "12px",
     },
     label: {
       fontSize: "13px",
       fontWeight: 600,
-      color: "var(--color-text-primary, #000)",
+      color: isDarkMode ? "#e0e0e0" : "#000000",
       marginBottom: "8px",
       display: "block",
     },
@@ -150,9 +168,9 @@ export default function WelcomeModal({ user, setBudget, setCategoryBudget, onCom
       padding: "10px 12px",
       fontSize: "14px",
       borderRadius: "8px",
-      border: "1px solid var(--color-border-primary, #e0e0e0)",
-      background: "var(--color-background-primary, #fff)",
-      color: "var(--color-text-primary, #000)",
+      border: `1px solid ${isDarkMode ? "#404040" : "#e0e0e0"}`,
+      background: isDarkMode ? "#2a2a2a" : "#ffffff",
+      color: isDarkMode ? "#e0e0e0" : "#000000",
       boxSizing: "border-box",
       outline: "none",
       fontFamily: "inherit",
@@ -176,7 +194,7 @@ export default function WelcomeModal({ user, setBudget, setCategoryBudget, onCom
     },
     helperText: {
       fontSize: "12px",
-      color: "var(--color-text-muted, #666)",
+      color: isDarkMode ? "#a0a0a0" : "#666666",
       marginTop: "-12px",
       marginBottom: "16px",
     },
@@ -200,7 +218,7 @@ export default function WelcomeModal({ user, setBudget, setCategoryBudget, onCom
     backButton: {
       background: "none",
       border: "none",
-      color: "var(--color-text-muted, #666)",
+      color: isDarkMode ? "#a0a0a0" : "#666666",
       fontSize: "13px",
       cursor: "pointer",
       marginBottom: "16px",
@@ -217,7 +235,7 @@ export default function WelcomeModal({ user, setBudget, setCategoryBudget, onCom
       border: `1.5px solid ${
         selected
           ? "var(--color-primary, #E91E8C)"
-          : "var(--color-primary-mid, #e0b1d6)"
+          : isDarkMode ? "#404040" : "var(--color-primary-mid, #e0b1d6)"
       }`,
       borderRadius: "12px",
       padding: "14px 16px",
@@ -225,9 +243,10 @@ export default function WelcomeModal({ user, setBudget, setCategoryBudget, onCom
       fontSize: "14px",
       fontWeight: 500,
       textAlign: "center",
+      color: isDarkMode ? "#e0e0e0" : "#000000",
       background: selected
-        ? "var(--color-primary-light, #fff0f7)"
-        : "transparent",
+        ? isDarkMode ? "rgba(233, 30, 140, 0.15)" : "var(--color-primary-light, #fff0f7)"
+        : isDarkMode ? "#2a2a2a" : "transparent",
       transition: "border-color 0.15s, background 0.15s",
       userSelect: "none",
     }),
@@ -241,7 +260,7 @@ export default function WelcomeModal({ user, setBudget, setCategoryBudget, onCom
       border: `1.5px solid ${
         selected
           ? "var(--color-primary, #E91E8C)"
-          : "var(--color-primary-mid, #e0b1d6)"
+          : isDarkMode ? "#404040" : "var(--color-primary-mid, #e0b1d6)"
       }`,
       borderRadius: "12px",
       padding: "14px",
@@ -249,9 +268,10 @@ export default function WelcomeModal({ user, setBudget, setCategoryBudget, onCom
       fontSize: "14px",
       fontWeight: 500,
       textAlign: "center",
+      color: isDarkMode ? "#e0e0e0" : "#000000",
       background: selected
-        ? "var(--color-primary-light, #fff0f7)"
-        : "transparent",
+        ? isDarkMode ? "rgba(233, 30, 140, 0.15)" : "var(--color-primary-light, #fff0f7)"
+        : isDarkMode ? "#2a2a2a" : "transparent",
       transition: "border-color 0.15s, background 0.15s",
     }),
     totalRow: {
@@ -260,8 +280,9 @@ export default function WelcomeModal({ user, setBudget, setCategoryBudget, onCom
       padding: "12px 0",
       fontSize: "13px",
       fontWeight: 600,
-      borderTop: "1px solid var(--color-border-primary, #e0e0e0)",
+      borderTop: `1px solid ${isDarkMode ? "#404040" : "#e0e0e0"}`,
       marginBottom: "16px",
+      color: isDarkMode ? "#e0e0e0" : "#000000",
     },
     totalText: (valid) => ({
       color: valid ? "#2ECC71" : "#E24B4A",
@@ -275,14 +296,14 @@ export default function WelcomeModal({ user, setBudget, setCategoryBudget, onCom
     categoryName: {
       fontSize: "13px",
       fontWeight: 500,
-      color: "var(--color-text-primary, #000)",
+      color: isDarkMode ? "#e0e0e0" : "#000000",
     },
     categoryInput: {
       width: "140px",
     },
     divider: {
       height: "1px",
-      background: "var(--color-border-primary, #e0e0e0)",
+      background: isDarkMode ? "#404040" : "#e0e0e0",
       margin: "16px 0",
     },
   };
@@ -539,6 +560,10 @@ export default function WelcomeModal({ user, setBudget, setCategoryBudget, onCom
           to {
             opacity: 1;
           }
+        }
+        input::placeholder {
+          color: ${isDarkMode ? "#707070" : "#cccccc"} !important;
+          opacity: 1;
         }
       `}</style>
     </div>
